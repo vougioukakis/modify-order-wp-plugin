@@ -6,6 +6,10 @@ Version: 1.0.0
 Author: Nikos Vougioukakis
 */
 
+/*TODO: Add beforeunload script to cancel the order modification, once user clicks Change this product.
+*       Should stop once a product is selected and run again only if another is selected to be changed.
+*/
+
 session_start(); //need at the start of every script
 //error_log("Session order id:" . $_SESSION['current_order_id'] . " and replaced product: " . $_SESSION['replace_product']);
 
@@ -118,6 +122,8 @@ function add_select_product_button() {
         $replace_item_id = $_SESSION['replace_product'];
         error_log('product id in iter: ' . get_the_ID());
         echo '<a href="' . esc_url( add_query_arg( 'new_product_id', get_the_ID() ) ) . '" class="button">Select this product</a>';
+        // TODO: Only enable this for products that have price >= than chosen.
+        
     } else {
         error_log('user is not replacing');
     }
