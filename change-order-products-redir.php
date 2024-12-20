@@ -11,6 +11,9 @@ Author: Nikos Vougioukakis
 *       Should stop once a product is selected and run again only if another is selected to be changed.
 */
 
+// TODO: If customer pays by card, add way to pay for the difference.
+
+
 session_start(); //need at the start of every script
 //error_log("Session order id:" . $_SESSION['current_order_id'] . " and replaced product: " . $_SESSION['replace_product']);
 
@@ -92,9 +95,7 @@ function process_product_replacement() {
                 $order->calculate_totals();
                 $order->save();
                 // make session forget to avoid bugs
-                unset( $_SESSION['current_order_id'] );
-                unset( $_SESSION['replace_product'] );
-                unset( $_SESSION['replace_product_id'] );
+                session_unset();
 
                 wc_add_notice( 'Your product has been changed successfully!', 'success' );
                 wp_redirect( $order->get_view_order_url() );
