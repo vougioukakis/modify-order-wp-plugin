@@ -6,7 +6,8 @@ Version: 1.0.0
 Author: Nikos Vougioukakis
 */
 
-/*TODO: Add beforeunload script to cancel the order modification, once user clicks Change this product.
+/*TODO: Add beforeunload script to cancel the order modification and make session forget,
+*       once user clicks Change this product.
 *       Should stop once a product is selected and run again only if another is selected to be changed.
 */
 
@@ -19,7 +20,8 @@ add_action( 'woocommerce_order_details_after_order_table', 'custom_change_order_
  * put a 'Modify Order' button there which will show a form when clicked. The form has a button to replace
  * a product in the order under each product.
  * 
- * Buttons will include a query argument 'replace_product' with the item id to be replaced as a value.
+ * Buttons will include a query argument 'replace_product' with the order item id to be replaced as a value.
+ * Order item id is different from woocommerce product id.
  */
 function custom_change_order_products_button( $order ) {
     if ( $order->get_status() == 'processing' ) {
@@ -38,6 +40,7 @@ function custom_change_order_products_button( $order ) {
 
         // store the order id in session, couldnt retrieve when in shop page
         $_SESSION['current_order_id'] = $order->get_id();
+
     }
 }
 
@@ -49,6 +52,13 @@ function track_selected_product_for_replacement() {
     if ( isset( $_GET['replace_product'] )) {
         $order_item_id = intval( $_GET['replace_product'] );
         $_SESSION['replace_product'] = $order_item_id;
+
+        $order_item = $order->get_item( $order_item_id );
+        $product = $order_item->get_product();
+        $product_id = $product->get_id();
+
+        $_SESSION['replace_product_id'] = $product_id;
+        error_log('replacing product with woocommerce id = '.$product_id);
     }
 }
 
@@ -69,12 +79,12 @@ function process_product_replacement() {
             exit;
         }
 
-        $replace_item_id = $_SESSION['replace_product'];
+        $replace_item_id_order = $_SESSION['replace_product'];
         $new_product_id = intval( $_GET['new_product_id'] );
 
         // replace the item with the new product
         foreach ( $order->get_items() as $item_id => $item ) {
-            if ( $item->get_id() == $replace_item_id ) {
+            if ( $item->get_id() == $replace_item_id_order ) {
                 $order->remove_item( $item_id );
                 $order->add_product( wc_get_product( $new_product_id ), $item->get_quantity() );
 
@@ -83,6 +93,7 @@ function process_product_replacement() {
                 // make session forget to avoid bugs
                 unset( $_SESSION['current_order_id'] );
                 unset( $_SESSION['replace_product'] );
+                unset( $_SESSION['replace_product_id'] );
 
                 wc_add_notice( 'Your product has been changed successfully!', 'success' );
                 wp_redirect( $order->get_view_order_url() );
@@ -119,11 +130,26 @@ add_action( 'woocommerce_after_shop_loop_item', 'add_select_product_button', 20 
  */
 function add_select_product_button() {
     if ( isset( $_SESSION['replace_product'] ) ) {
-        $replace_item_id = $_SESSION['replace_product'];
+        $replace_item_id_order = $_SESSION['replace_product'];
+        $replace_item_id = $_SESSION['replace_product_id'];
+
         error_log('product id in iter: ' . get_the_ID());
-        echo '<a href="' . esc_url( add_query_arg( 'new_product_id', get_the_ID() ) ) . '" class="button">Select this product</a>';
         // TODO: Only enable this for products that have price >= than chosen.
-        
+
+        error_log('replace_item_id_order: '. $replace_item_id_order);
+        error_log('replace_item_id: '. $replace_item_id);
+
+        $product = wc_get_product( $replace_item_id );
+        $current_product_price = $product->get_price();
+        error_log('current_product_price:' . $current_product_price);
+        $iteration_product_price = get_post_meta( get_the_ID(), '_price', true );
+        error_log('iteration product price'. $iteration_product_price);
+
+        if ($current_product_price <= $iteration_product_price) {
+            echo '<a href="' . esc_url( add_query_arg( 'new_product_id', get_the_ID() ) ) . '" class="button">Select this product</a>';
+        }
+
+
     } else {
         error_log('user is not replacing');
     }
