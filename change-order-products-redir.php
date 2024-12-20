@@ -136,7 +136,7 @@ function add_select_product_button() {
         $replace_item_id = $_SESSION['replace_product_id'];
 
         error_log('product id in iter: ' . get_the_ID());
-        // TODO: Only enable this for products that have price >= than chosen.
+        // TESTING: Only enable this for products that have price >= than chosen.
 
         error_log('replace_item_id_order: '. $replace_item_id_order);
         error_log('replace_item_id: '. $replace_item_id);
