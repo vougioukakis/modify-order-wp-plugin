@@ -53,12 +53,13 @@ function track_selected_product_for_replacement() {
         $order_item_id = intval( $_GET['replace_product'] );
         $_SESSION['replace_product'] = $order_item_id;
 
+        $order = wc_get_order($_SESSION['current_order_id']);
         $order_item = $order->get_item( $order_item_id );
         $product = $order_item->get_product();
         $product_id = $product->get_id();
 
         $_SESSION['replace_product_id'] = $product_id;
-        error_log('replacing product with woocommerce id = '.$product_id);
+        error_log('  - -  -  - - - - replacing product with woocommerce id = '.$product_id);
     }
 }
 
